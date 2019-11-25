@@ -136,16 +136,16 @@ def makeCorrespondence(predictor_path, src_img, dest_img):
     src_img_landmarks, src_landmarks_matrix = find_landmarks(predictor_path, cropped_images[0], zeros_landmarks)
     dest_img_landmarks, landmarks_matrix = find_landmarks(predictor_path, cropped_images[1], src_landmarks_matrix)
     
-    size=(cropped_images[1].shape[0], cropped_images[1].shape[1])
-    normalized_landmarks=landmarks_matrix/2
-    normalized_landmarks=np.append(normalized_landmarks,[[1,1]],axis=0)
-    normalized_landmarks=np.append(normalized_landmarks,[[size[1]-1,1]],axis=0)
-    normalized_landmarks=np.append(normalized_landmarks,[[(size[1]-1)//2,1]],axis=0)
-    normalized_landmarks=np.append(normalized_landmarks,[[1,size[0]-1]],axis=0)
-    normalized_landmarks=np.append(normalized_landmarks,[[1,(size[0]-1)//2]],axis=0)
-    normalized_landmarks=np.append(normalized_landmarks,[[(size[1]-1)//2,size[0]-1]],axis=0)
-    normalized_landmarks=np.append(normalized_landmarks,[[size[1]-1,size[0]-1]],axis=0)
-    normalized_landmarks=np.append(normalized_landmarks,[[(size[1]-1)//2,(size[0]-1)//2]],axis=0)
+    size = (cropped_images[1].shape[0], cropped_images[1].shape[1])
+    normalized_landmarks = landmarks_matrix/2
+    normalized_landmarks = np.append(normalized_landmarks,[[1,1]],axis=0)
+    normalized_landmarks = np.append(normalized_landmarks,[[size[1]-1,1]],axis=0)
+    normalized_landmarks = np.append(normalized_landmarks,[[(size[1]-1)//2,1]],axis=0)
+    normalized_landmarks = np.append(normalized_landmarks,[[1,size[0]-1]],axis=0)
+    normalized_landmarks = np.append(normalized_landmarks,[[1,(size[0]-1)//2]],axis=0)
+    normalized_landmarks = np.append(normalized_landmarks,[[(size[1]-1)//2,size[0]-1]],axis=0)
+    normalized_landmarks = np.append(normalized_landmarks,[[size[1]-1,size[0]-1]],axis=0)
+    normalized_landmarks = np.append(normalized_landmarks,[[(size[1]-1)//2,(size[0]-1)//2]],axis=0)
 
     return [size, cropped_images[0], cropped_images[1], src_img_landmarks, dest_img_landmarks, normalized_landmarks]
 
