@@ -5,6 +5,4 @@ setup(
 	version='0.1dev',
 	packages=['morphing',],
 	install_requires=['numpy', 'dlib', 'scikit-image', 'opencv-python']
-	license='Open for Commercial as well as Non-Commercial Use'
-	# long_description=open('README.txt').read()
 )

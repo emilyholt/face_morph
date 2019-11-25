@@ -59,11 +59,11 @@ def morphTriangle(img1, img2, img, t1, t2, t, alpha) :
     img[r[1]:r[1]+r[3], r[0]:r[0]+r[2]] = img[r[1]:r[1]+r[3], r[0]:r[0]+r[2]] * ( 1 - mask ) + imgRect * mask
 
 
-def makeMorphs(theDuration,theFrameRate,theImage1,theImage2,theList1,theList2,theList4,size,theResult):
+def makeMorphs(length, frame_rate, theImage1, theImage2, theList1, theList2, theList4, size, output):
 
-    totalImages=int(theDuration*theFrameRate)
+    totalImages=int(length * frame_rate)
 
-    p = Popen(['ffmpeg', '-y', '-f', 'image2pipe', '-r', str(theFrameRate),'-s',str(size[1])+'x'+str(size[0]), '-i', '-', '-c:v', 'libx264', '-crf', '25','-vf','scale=trunc(iw/2)*2:trunc(ih/2)*2','-pix_fmt','yuv420p', theResult], stdin=PIPE)
+    p = Popen(['ffmpeg', '-y', '-f', 'image2pipe', '-r', str(frame_rate),'-s',str(size[1])+'x'+str(size[0]), '-i', '-', '-c:v', 'libx264', '-crf', '25','-vf','scale=trunc(iw/2)*2:trunc(ih/2)*2','-pix_fmt','yuv420p', output], stdin=PIPE)
     for j in range(0,totalImages):
         
         # Read images
