@@ -6,49 +6,51 @@ import math
 from subprocess import Popen, PIPE
 from PIL import Image
 
-# Apply affine transform calculated using srcTri and dstTri to src and
+# Apply affine transform calculated using src_triangle and dest_triangle to src and
 # output an image of size.
-def apply_affine_transform(src, srcTri, dstTri, size) :
+def apply_affine_transform(src, src_triangle, dest_triangle, size) :
     
     # Given a pair of triangles, find the affine transform.
-    warpMat = cv2.getAffineTransform( np.float32(srcTri), np.float32(dstTri) )
+    warpMat = cv2.getAffineTransform( np.float32(src_triangle), np.float32(dest_triangle) )
     
     # Apply the Affine Transform just found to the src image
-    dst = cv2.warpAffine( src, warpMat, (size[0], size[1]), None, flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT_101 )
+    dest = cv2.warpAffine( src, warpMat, (size[0], size[1]), None, flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT_101 )
 
-    return dst
-
+    return dest
 
 # Warps and alpha blends triangular regions from src_img and dest_img to img
-def morph_triangle(src_img, dest_img, img, t1, t2, t, alpha) :
+def morph_triangle(src_img, dest_img, output_img, src_triangle, dest_triangle, avg_triangle, alpha) :
 
     # Find bounding rectangle for each triangle
-    r1 = cv2.boundingRect(np.float32([t1]))
-    r2 = cv2.boundingRect(np.float32([t2]))
-    r = cv2.boundingRect(np.float32([t]))
-
+    src_triangle_bounding_rect = cv2.boundingRect(np.float32([src_triangle]))
+    dest_triangle_bounding_rect = cv2.boundingRect(np.float32([dest_triangle]))
+    avg_triangle_bounding_rect = cv2.boundingRect(np.float32([avg_triangle]))
 
     # Offset points by left top corner of the respective rectangles
     t1Rect = []
     t2Rect = []
     tRect = []
 
-
     for i in range(0, 3):
-        tRect.append(((t[i][0] - r[0]),(t[i][1] - r[1])))
-        t1Rect.append(((t1[i][0] - r1[0]),(t1[i][1] - r1[1])))
-        t2Rect.append(((t2[i][0] - r2[0]),(t2[i][1] - r2[1])))
-
+        tRect.append(((avg_triangle[i][0] - avg_triangle_bounding_rect[0]), 
+                      (avg_triangle[i][1] - avg_triangle_bounding_rect[1])))
+        t1Rect.append(((src_triangle[i][0] - src_triangle_bounding_rect[0]), 
+                       (src_triangle[i][1] - src_triangle_bounding_rect[1])))
+        t2Rect.append(((dest_triangle[i][0] - dest_triangle_bounding_rect[0]), 
+                       (dest_triangle[i][1] - dest_triangle_bounding_rect[1])))
 
     # Get mask by filling triangle
-    mask = np.zeros((r[3], r[2], 3), dtype = np.float32)
+    mask = np.zeros((avg_triangle_bounding_rect[3], avg_triangle_bounding_rect[2], 3), dtype = np.float32)
     cv2.fillConvexPoly(mask, np.int32(tRect), (1.0, 1.0, 1.0), 16, 0);
 
     # Apply warpImage to small rectangular patches
-    src_img_rect = src_img[r1[1]:r1[1] + r1[3], r1[0]:r1[0] + r1[2]]
-    dest_img_rect = dest_img[r2[1]:r2[1] + r2[3], r2[0]:r2[0] + r2[2]]
+    src_img_rect = src_img[src_triangle_bounding_rect[1]:src_triangle_bounding_rect[1] + src_triangle_bounding_rect[3], 
+                           src_triangle_bounding_rect[0]:src_triangle_bounding_rect[0] + src_triangle_bounding_rect[2]]
 
-    size = (r[2], r[3])
+    dest_img_rect = dest_img[dest_triangle_bounding_rect[1]:dest_triangle_bounding_rect[1] + dest_triangle_bounding_rect[3], 
+                             dest_triangle_bounding_rect[0]:dest_triangle_bounding_rect[0] + dest_triangle_bounding_rect[2]]
+
+    size = (avg_triangle_bounding_rect[2], avg_triangle_bounding_rect[3])
     warpImage1 = apply_affine_transform(src_img_rect, t1Rect, tRect, size)
     warpImage2 = apply_affine_transform(dest_img_rect, t2Rect, tRect, size)
 
@@ -56,7 +58,10 @@ def morph_triangle(src_img, dest_img, img, t1, t2, t, alpha) :
     imgRect = (1.0 - alpha) * warpImage1 + alpha * warpImage2
 
     # Copy triangular region of the rectangular patch to the output image
-    img[r[1]:r[1]+r[3], r[0]:r[0]+r[2]] = img[r[1]:r[1]+r[3], r[0]:r[0]+r[2]] * ( 1 - mask ) + imgRect * mask
+    output_img[avg_triangle_bounding_rect[1]:avg_triangle_bounding_rect[1] + avg_triangle_bounding_rect[3], 
+               avg_triangle_bounding_rect[0]:avg_triangle_bounding_rect[0] + avg_triangle_bounding_rect[2]] = \
+    output_img[avg_triangle_bounding_rect[1]:avg_triangle_bounding_rect[1] + avg_triangle_bounding_rect[3], 
+               avg_triangle_bounding_rect[0]:avg_triangle_bounding_rect[0] + avg_triangle_bounding_rect[2]] * ( 1 - mask ) + imgRect * mask
 
 
 def makeMorphs(length, frame_rate, src_img, dest_img, src_landmarks, dest_landmarks, delaunay_list, size, output):
@@ -91,12 +96,12 @@ def makeMorphs(length, frame_rate, src_img, dest_img, src_landmarks, dest_landma
             b = int(delaunay_list[i][1])
             c = int(delaunay_list[i][2])
             
-            t1 = [src_landmarks[a], src_landmarks[b], src_landmarks[c]]
-            t2 = [dest_landmarks[a], dest_landmarks[b], dest_landmarks[c]]
-            t = [points[a], points[b], points[c]]
+            src_triangle = [src_landmarks[a], src_landmarks[b], src_landmarks[c]]
+            dest_triangle = [dest_landmarks[a], dest_landmarks[b], dest_landmarks[c]]
+            avg_triangle = [points[a], points[b], points[c]]
 
             # Morph one triangle at a time.
-            morph_triangle(src_img, dest_img, imgMorph, t1, t2, t, alpha)
+            morph_triangle(src_img, dest_img, imgMorph, src_triangle, dest_triangle, avg_triangle, alpha)
 
         temp_res=cv2.cvtColor(np.uint8(imgMorph),cv2.COLOR_BGR2RGB)
         res=Image.fromarray(temp_res)
