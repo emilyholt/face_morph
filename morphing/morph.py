@@ -1,4 +1,4 @@
-from face_landmark_detection import makeCorrespondence
+from face_landmark_detection import average_faces
 from delaunay import makeDelaunay
 from faceMorph import makeMorphs
 import subprocess
@@ -6,18 +6,18 @@ import argparse
 import shutil
 import os
 
-MORPH_PATH = '/Users/egholt/GradSchool/GraphTheory/face-morphing/morphing'
+MORPH_PATH = '/Users/moose/GraphTheory/face_morph/morphing'
 import sys
 # insert at 1, 0 is the script path (or '' in REPL)
 sys.path.insert(1, MORPH_PATH)
 
 def morph(predictor, src_img, dest_img, length, frame_rate, output):
-	[size, img1, img2, list1, list2, list3] = makeCorrespondence(predictor, src_img, dest_img)
-	if(size[0] == 0):
-		print("error: couldn't find a face in the image " + size[1])
+	[dest_size, cropped_src, cropped_dest, src_landmarks, dest_landmarks, avg_landmarks] = average_faces(predictor, src_img, dest_img)
+	if(dest_size[0] == 0):
+		print("error: couldn't find a face in the image " + dest_size[1])
 		return
-	delaunay_list = makeDelaunay(size[1],size[0],list3)
-	makeMorphs(length, frame_rate, img1, img2, list1, list2, delaunay_list, size, output)
+	delaunay_list = makeDelaunay(dest_size[1], dest_size[0], avg_landmarks)
+	makeMorphs(length, frame_rate, cropped_src, cropped_dest, src_landmarks, dest_landmarks, delaunay_list, dest_size, output)
 
 if __name__ == "__main__":
 

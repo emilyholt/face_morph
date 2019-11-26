@@ -83,8 +83,8 @@ def cropping_dimensions(src_img, dest_img):
     else:
         return [src_img[:, y_diff:y_avg], dest_img[-x_diff:x_avg, :]]
 
-def find_landmarks(predictor_path, cropped_img, landmarks_matrix):
-    size=(cropped_img.shape[0], cropped_img.shape[1])
+def find_landmarks(predictor_path, cropped_img, size):
+    landmarks_list = []
 
     # Detect the points of face.
     detector = dlib.get_frontal_face_detector()
@@ -95,9 +95,6 @@ def find_landmarks(predictor_path, cropped_img, landmarks_matrix):
     if(len(dets) == 0):
         return("ERROR: No faces detected")
 
-    landmarks_list = []
-    landmarks_matrix = array = np.zeros((68,2))
-
     # Predict facial landmarks
     for k, d in enumerate(dets):
         
@@ -105,9 +102,8 @@ def find_landmarks(predictor_path, cropped_img, landmarks_matrix):
         shape = predictor(cropped_img, d)
         for i in range(0,68):
             landmarks_list.append((int(shape.part(i).x),int(shape.part(i).y)))
-            landmarks_matrix[i][0] += shape.part(i).x
-            landmarks_matrix[i][1] += shape.part(i).y
 
+        # Append img endpoints
         landmarks_list.append((1,1))
         landmarks_list.append((size[1]-1,1))
         landmarks_list.append(((size[1]-1)//2,1))
@@ -117,9 +113,28 @@ def find_landmarks(predictor_path, cropped_img, landmarks_matrix):
         landmarks_list.append((size[1]-1,size[0]-1))
         landmarks_list.append(((size[1]-1)//2,(size[0]-1)//2))
 
-    return landmarks_list, landmarks_matrix
+    return landmarks_list
 
-def makeCorrespondence(predictor_path, src_img, dest_img):
+def average_landmarks(src_landmarks, dest_landmarks, dest_size):
+    
+    # Get average of src and dest landmarks
+    src_landmarks = np.array(src_landmarks)
+    dest_landmarks = np.array(dest_landmarks)
+    avg_landmarks = (src_landmarks + dest_landmarks) / 2
+
+    # Append img endpoints
+    avg_landmarks = np.append(avg_landmarks,[[1,1]],axis=0)
+    avg_landmarks = np.append(avg_landmarks,[[dest_size[1]-1,1]],axis=0)
+    avg_landmarks = np.append(avg_landmarks,[[(dest_size[1]-1)//2,1]],axis=0)
+    avg_landmarks = np.append(avg_landmarks,[[1,dest_size[0]-1]],axis=0)
+    avg_landmarks = np.append(avg_landmarks,[[1,(dest_size[0]-1)//2]],axis=0)
+    avg_landmarks = np.append(avg_landmarks,[[(dest_size[1]-1)//2,dest_size[0]-1]],axis=0)
+    avg_landmarks = np.append(avg_landmarks,[[dest_size[1]-1,dest_size[0]-1]],axis=0)
+    avg_landmarks = np.append(avg_landmarks,[[(dest_size[1]-1)//2,(dest_size[0]-1)//2]],axis=0)
+
+    return avg_landmarks
+
+def average_faces(predictor_path, src_img, dest_img):
 
     # Detect the points of face.
     detector = dlib.get_frontal_face_detector()
@@ -127,25 +142,15 @@ def makeCorrespondence(predictor_path, src_img, dest_img):
 
     # Setting up some initial values.
     zeros_landmarks = np.zeros((68,2))
-    size=(0,0)
-    cropped_images = crop_images(src_img, dest_img)
-
-    src_img_landmarks=[]
-    dest_img_landmarks=[]
-
-    src_img_landmarks, src_landmarks_matrix = find_landmarks(predictor_path, cropped_images[0], zeros_landmarks)
-    dest_img_landmarks, landmarks_matrix = find_landmarks(predictor_path, cropped_images[1], src_landmarks_matrix)
     
-    size = (cropped_images[1].shape[0], cropped_images[1].shape[1])
-    normalized_landmarks = landmarks_matrix/2
-    normalized_landmarks = np.append(normalized_landmarks,[[1,1]],axis=0)
-    normalized_landmarks = np.append(normalized_landmarks,[[size[1]-1,1]],axis=0)
-    normalized_landmarks = np.append(normalized_landmarks,[[(size[1]-1)//2,1]],axis=0)
-    normalized_landmarks = np.append(normalized_landmarks,[[1,size[0]-1]],axis=0)
-    normalized_landmarks = np.append(normalized_landmarks,[[1,(size[0]-1)//2]],axis=0)
-    normalized_landmarks = np.append(normalized_landmarks,[[(size[1]-1)//2,size[0]-1]],axis=0)
-    normalized_landmarks = np.append(normalized_landmarks,[[size[1]-1,size[0]-1]],axis=0)
-    normalized_landmarks = np.append(normalized_landmarks,[[(size[1]-1)//2,(size[0]-1)//2]],axis=0)
+    cropped_images = crop_images(src_img, dest_img)
+    src_size = (cropped_images[0].shape[0], cropped_images[0].shape[1])
+    dest_size = (cropped_images[1].shape[0], cropped_images[1].shape[1])
 
-    return [size, cropped_images[0], cropped_images[1], src_img_landmarks, dest_img_landmarks, normalized_landmarks]
+    src_landmarks= find_landmarks(predictor_path, cropped_images[0], src_size)
+    dest_landmarks= find_landmarks(predictor_path, cropped_images[1], dest_size)
+    
+    avg_landmarks = average_landmarks(src_landmarks, dest_landmarks, dest_size)
+
+    return [dest_size, cropped_images[0], cropped_images[1], src_landmarks, dest_landmarks, avg_landmarks]
 
