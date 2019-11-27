@@ -112,7 +112,7 @@ def find_landmarks(predictor_path, cropped_img, size):
         landmarks_list.append(((size[1]-1)//2,size[0]-1))
         landmarks_list.append((size[1]-1,size[0]-1))
         landmarks_list.append(((size[1]-1)//2,(size[0]-1)//2))
-
+        
     return landmarks_list
 
 def average_landmarks(src_landmarks, dest_landmarks, dest_size):
@@ -120,18 +120,7 @@ def average_landmarks(src_landmarks, dest_landmarks, dest_size):
     # Get average of src and dest landmarks
     src_landmarks = np.array(src_landmarks)
     dest_landmarks = np.array(dest_landmarks)
-    avg_landmarks = (src_landmarks + dest_landmarks) / 2
-
-    # Append img endpoints
-    avg_landmarks = np.append(avg_landmarks,[[1,1]],axis=0)
-    avg_landmarks = np.append(avg_landmarks,[[dest_size[1]-1,1]],axis=0)
-    avg_landmarks = np.append(avg_landmarks,[[(dest_size[1]-1)//2,1]],axis=0)
-    avg_landmarks = np.append(avg_landmarks,[[1,dest_size[0]-1]],axis=0)
-    avg_landmarks = np.append(avg_landmarks,[[1,(dest_size[0]-1)//2]],axis=0)
-    avg_landmarks = np.append(avg_landmarks,[[(dest_size[1]-1)//2,dest_size[0]-1]],axis=0)
-    avg_landmarks = np.append(avg_landmarks,[[dest_size[1]-1,dest_size[0]-1]],axis=0)
-    avg_landmarks = np.append(avg_landmarks,[[(dest_size[1]-1)//2,(dest_size[0]-1)//2]],axis=0)
-
+    avg_landmarks = (src_landmarks + dest_landmarks) / 2    
     return avg_landmarks
 
 def average_faces(predictor_path, src_img, dest_img):
