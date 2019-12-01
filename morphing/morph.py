@@ -4,18 +4,19 @@ import sys
 import os
 import math
 from subprocess import Popen, PIPE
-from PIL import Image
+from PIL import Image, ImageDraw
 
-# Apply affine transform calculated using src_triangle and dest_triangle to src and
-# output an image of size.
+VIDEO_LENGTH = 5
+FRAME_RATE = 25
+
+# Apply affine transform calculated using src_triangle and dest_triangle
 def apply_affine_transform(src, src_triangle, dest_triangle, size) :
     
     # Given a pair of triangles, find the affine transform.
-    warpMat = cv2.getAffineTransform( np.float32(src_triangle), np.float32(dest_triangle) )
+    warp_mat = cv2.getAffineTransform(np.float32(src_triangle), np.float32(dest_triangle))
     
-    # Apply the Affine Transform just found to the src image
-    dest = cv2.warpAffine( src, warpMat, (size[0], size[1]), None, flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT_101 )
-
+    # Apply affine transform to the src image
+    dest = cv2.warpAffine( src, warp_mat, (size[0], size[1]), None, flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT_101)
     return dest
 
 # Warps and alpha blends triangular regions from src_img and dest_img to img
@@ -64,11 +65,11 @@ def morph_triangle(src_img, dest_img, output_img, src_triangle, dest_triangle, a
                avg_triangle_bounding_rect[0]:avg_triangle_bounding_rect[0] + avg_triangle_bounding_rect[2]] * ( 1 - mask ) + imgRect * mask
 
 
-def makeMorphs(length, frame_rate, src_img, dest_img, src_landmarks, dest_landmarks, delaunay_list, size, output):
+def morph_video(src_img, dest_img, src_landmarks, dest_landmarks, delaunay_list, dest_size, output):
 
-    total_midpts=int(length * frame_rate)
+    total_midpts=int(VIDEO_LENGTH * FRAME_RATE)
 
-    p = Popen(['ffmpeg', '-y', '-f', 'image2pipe', '-r', str(frame_rate),'-s',str(size[1])+'x'+str(size[0]), '-i', '-', '-c:v', 'libx264', '-crf', '25','-vf','scale=trunc(iw/2)*2:trunc(ih/2)*2','-pix_fmt','yuv420p', output], stdin=PIPE)
+    p = Popen(['ffmpeg', '-y', '-f', 'image2pipe', '-r', str(FRAME_RATE),'-s',str(dest_size[1])+'x'+str(dest_size[0]), '-i', '-', '-c:v', 'libx264', '-crf', '25','-vf','scale=trunc(iw/2)*2:trunc(ih/2)*2','-pix_fmt','yuv420p', output], stdin=PIPE)
     
     for j in range(0, total_midpts):
 
@@ -77,18 +78,17 @@ def makeMorphs(length, frame_rate, src_img, dest_img, src_landmarks, dest_landma
         dest_img = np.float32(dest_img)
 
         # Read array of corresponding points
-        points = []
+        midpts = []
         alpha = j / (total_midpts - 1)
 
         # Compute weighted average point coordinates
         for i in range(0, len(src_landmarks)):
             x = ( 1 - alpha ) * src_landmarks[i][0] + alpha * dest_landmarks[i][0]
             y = ( 1 - alpha ) * src_landmarks[i][1] + alpha * dest_landmarks[i][1]
-            points.append((x,y))
-
+            midpts.append((x,y))
 
         # Allocate space for final output
-        imgMorph = np.zeros(src_img.shape, dtype = src_img.dtype)
+        mid_morph = np.zeros(src_img.shape, dtype = src_img.dtype)
 
         # Read triangles from delaunay_list
         for i in range(len(delaunay_list)):    
@@ -98,14 +98,14 @@ def makeMorphs(length, frame_rate, src_img, dest_img, src_landmarks, dest_landma
             
             src_triangle = [src_landmarks[a], src_landmarks[b], src_landmarks[c]]
             dest_triangle = [dest_landmarks[a], dest_landmarks[b], dest_landmarks[c]]
-            avg_triangle = [points[a], points[b], points[c]]
+            avg_triangle = [midpts[a], midpts[b], midpts[c]]
 
             # Morph one triangle at a time.
-            morph_triangle(src_img, dest_img, imgMorph, src_triangle, dest_triangle, avg_triangle, alpha)
+            morph_triangle(src_img, dest_img, mid_morph, src_triangle, dest_triangle, avg_triangle, alpha)
 
-        temp_res=cv2.cvtColor(np.uint8(imgMorph),cv2.COLOR_BGR2RGB)
-        res=Image.fromarray(temp_res)
-        res.save(p.stdin,'JPEG')
+        temp_res = cv2.cvtColor(np.uint8(mid_morph),cv2.COLOR_BGR2RGB)
+        res = Image.fromarray(temp_res)
+        res.save(p.stdin, 'JPEG')
 
     p.stdin.close()
     p.wait()

@@ -1,3 +1,10 @@
+'''
+Implementation of Delaunay triangulation
+
+Reference implementation: https://www.learnopencv.com/delaunay-triangulation-and-voronoi-diagram-using-opencv-c-python/
+
+'''
+
 import cv2
 import numpy as np
 import random
@@ -11,10 +18,9 @@ def point_in_rect(rect, point) :
 def delaunay_triangulation(img_height, img_width, avg_landmarks):
 
     # Make a landmark_coords list and a searchable landmark_coords_dict 
-    avg_landmarks = avg_landmarks.tolist()
     landmark_coords = [(int(x[0]), int(x[1])) for x in avg_landmarks]
     landmark_coords_dict = {x[0]:x[1] for x in list(zip(landmark_coords, range(76)))}
-        
+
     # Make a bounding rectangle
     rect = (0, 0, img_height, img_width)
 
@@ -29,15 +35,19 @@ def delaunay_triangulation(img_height, img_width, avg_landmarks):
     subdiv_triangles = subdiv.getTriangleList();
     delaunay_triangles=[]
 
-    for t in subdiv_triangles :
-        pt1 = (int(t[0]), int(t[1]))
-        pt2 = (int(t[2]), int(t[3]))
-        pt3 = (int(t[4]), int(t[5]))
+    for triang in subdiv_triangles:
+        triang_coord1 = (int(triang[0]), int(triang[1]))
+        triang_coord2 = (int(triang[2]), int(triang[3]))
+        triang_coord3 = (int(triang[4]), int(triang[5]))
         
-        if point_in_rect(rect, pt1) and point_in_rect(rect, pt2) and point_in_rect(rect, pt3) :
-            delaunay_triangles.append((landmark_coords_dict[pt1], 
-                                       landmark_coords_dict[pt2], 
-                                       landmark_coords_dict[pt3]))
+        if point_in_rect(rect, triang_coord1) and \
+           point_in_rect(rect, triang_coord2) and \
+           point_in_rect(rect, triang_coord3) :
+            delaunay_triangles.append((landmark_coords_dict[triang_coord1], 
+                                       landmark_coords_dict[triang_coord2], 
+                                       landmark_coords_dict[triang_coord3]))
     
+    print("avg_landmarks: %s\n\n" % avg_landmarks)
+    print("delaunay_triangles: %s\n\n" % delaunay_triangles)
     return delaunay_triangles
 
