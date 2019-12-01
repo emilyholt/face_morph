@@ -1,4 +1,4 @@
-from face_landmark_detection import crop_images, average_faces
+from face_landmark_detection import crop_images, find_landmarks_set, average_landmarks
 from delaunay import delaunay_triangulation
 from morph import morph_video
 import subprocess
@@ -12,7 +12,11 @@ import sys
 sys.path.insert(1, MORPH_PATH)
 
 def morph(predictor, src_img, dest_img, output):
-	[dest_size, cropped_src, cropped_dest, src_landmarks, dest_landmarks, avg_landmarks] = average_faces(predictor, src_img, dest_img)
+	cropped_images = crop_images(src_img, dest_img)
+	cropped_src = cropped_images[0]
+	cropped_dest = cropped_images[1]
+	[dest_size, src_landmarks, dest_landmarks] = find_landmarks_set(predictor, cropped_src, cropped_dest)
+	avg_landmarks = average_landmarks(src_landmarks, dest_landmarks, dest_size)
 	if(dest_size[0] == 0):
 		print("error: couldn't find a face in the image " + dest_size[1])
 		return

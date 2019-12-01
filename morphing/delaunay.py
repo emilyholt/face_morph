@@ -47,7 +47,5 @@ def delaunay_triangulation(img_height, img_width, avg_landmarks):
                                        landmark_coords_dict[triang_coord2], 
                                        landmark_coords_dict[triang_coord3]))
     
-    print("avg_landmarks: %s\n\n" % avg_landmarks)
-    print("delaunay_triangles: %s\n\n" % delaunay_triangles)
     return delaunay_triangles
 

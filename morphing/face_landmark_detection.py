@@ -98,12 +98,12 @@ def find_landmarks(predictor_path, cropped_img, size):
     # Predict facial landmarks
     for k, d in enumerate(dets):
         
-        # Get the landmarks/parts for the face in box d.
+        # Get the landmarksfor the face in box d
         shape = predictor(cropped_img, d)
         for i in range(0,68):
             landmarks_list.append((int(shape.part(i).x),int(shape.part(i).y)))
 
-        # Append img endpoints
+        # Append img endpoints so that we morph the whole image
         landmarks_list.append((1,1))
         landmarks_list.append((size[1]-1,1))
         landmarks_list.append(((size[1]-1)//2,1))
@@ -120,10 +120,11 @@ def average_landmarks(src_landmarks, dest_landmarks, dest_size):
     # Get average of src and dest landmarks
     src_landmarks = np.array(src_landmarks)
     dest_landmarks = np.array(dest_landmarks)
-    avg_landmarks = (src_landmarks + dest_landmarks) / 2    
-    return avg_landmarks
+    avg_landmarks = (src_landmarks + dest_landmarks) / 2   
 
-def average_faces(predictor_path, src_img, dest_img):
+    return avg_landmarks.tolist()
+
+def find_landmarks_set(predictor_path, cropped_src, cropped_dest):
 
     # Detect the points of face.
     detector = dlib.get_frontal_face_detector()
@@ -132,14 +133,10 @@ def average_faces(predictor_path, src_img, dest_img):
     # Setting up some initial values.
     zeros_landmarks = np.zeros((68,2))
     
-    cropped_images = crop_images(src_img, dest_img)
-    src_size = (cropped_images[0].shape[0], cropped_images[0].shape[1])
-    dest_size = (cropped_images[1].shape[0], cropped_images[1].shape[1])
+    src_size = (cropped_src.shape[0], cropped_src.shape[1])
+    dest_size = (cropped_dest.shape[0], cropped_dest.shape[1])
 
-    src_landmarks= find_landmarks(predictor_path, cropped_images[0], src_size)
-    dest_landmarks= find_landmarks(predictor_path, cropped_images[1], dest_size)
+    src_landmarks= find_landmarks(predictor_path, cropped_src, src_size)
+    dest_landmarks= find_landmarks(predictor_path, cropped_dest, dest_size)
     
-    avg_landmarks = average_landmarks(src_landmarks, dest_landmarks, dest_size)
-
-    return [dest_size, cropped_images[0], cropped_images[1], src_landmarks, dest_landmarks, avg_landmarks]
-
+    return [dest_size, src_landmarks, dest_landmarks]
