@@ -16,6 +16,13 @@ def point_in_rect(rect, point) :
     return True
 
 def delaunay_triangulation(img_height, img_width, avg_landmarks):
+    
+    '''
+    Triangulation of the dest_img needs to have the same patterns of the triangulation 
+    of the src_img, meaning the connection of the points has to be the same. After 
+    the triangulation of the src_img, we use the indices of the landmark points in 
+    the triangulation so we can replicate the same triangulation on the dest_img 
+    '''
 
     # Make a landmark_coords list and a searchable landmark_coords_dict 
     landmark_coords = [(int(x[0]), int(x[1])) for x in avg_landmarks]
@@ -24,10 +31,10 @@ def delaunay_triangulation(img_height, img_width, avg_landmarks):
     # Make a bounding rectangle
     rect = (0, 0, img_height, img_width)
 
-    # Create a Subdiv 
+    # Use OpenCV to subdivide the bounding rect 
     subdiv = cv2.Subdiv2D(rect);
 
-    # Insert landmark_coords into the subdiv
+    # Add landmark_coords to the subdiv
     for coord in landmark_coords :
         subdiv.insert(coord)
         
