@@ -11,7 +11,6 @@ FRAME_RATE = 25
 
 # Apply affine transform calculated using src_tri and dest_tri
 def apply_affine_transform(src, src_tri, dest_tri, size) :
-    
     # Given a pair of triangles, find the affine transform.
     warp_mat = cv2.getAffineTransform(np.float32(src_tri), np.float32(dest_tri))
     
@@ -24,26 +23,10 @@ def blend(src_affine_transform, dest_affine_transform, alpha):
     blended_rect = (1.0 - alpha) * src_affine_transform + alpha * dest_affine_transform
     return blended_rect
 
-def find_bounding_rectangles(src_tri, dest_tri, avg_tri):
-    # Find bounding rectangle for each triangle
-    src_tri_bounding_rect = cv2.boundingRect(np.float32([src_tri]))
-    dest_tri_bounding_rect = cv2.boundingRect(np.float32([dest_tri]))
-    avg_tri_bounding_rect = cv2.boundingRect(np.float32([avg_tri]))
-
-    # Offset points by left top corner of the respective rectangles
-    t1Rect = []
-    t2Rect = []
-    tRect = []
-
-    for i in range(0, 3):
-        tRect.append(((avg_tri[i][0] - avg_tri_bounding_rect[0]), 
-                      (avg_tri[i][1] - avg_tri_bounding_rect[1])))
-        t1Rect.append(((src_tri[i][0] - src_tri_bounding_rect[0]), 
-                       (src_tri[i][1] - src_tri_bounding_rect[1])))
-        t2Rect.append(((dest_tri[i][0] - dest_tri_bounding_rect[0]), 
-                       (dest_tri[i][1] - dest_tri_bounding_rect[1])))
-
-    return (t1Rect, t2Rect, tRect)
+def generate_patches(img, tri_bounding_rect):
+    rect_patch = img[tri_bounding_rect[1]:tri_bounding_rect[1] + tri_bounding_rect[3], 
+                     tri_bounding_rect[0]:tri_bounding_rect[0] + tri_bounding_rect[2]]
+    return rect_patch
 
 # Warps and alpha blends triangular regions from src_img and dest_img to img
 def warp_triangle(src_img, dest_img, output_img, src_tri, dest_tri, avg_tri, alpha) :
@@ -54,34 +37,29 @@ def warp_triangle(src_img, dest_img, output_img, src_tri, dest_tri, avg_tri, alp
     avg_tri_bounding_rect = cv2.boundingRect(np.float32([avg_tri]))
 
     # Offset points by left top corner of the respective rectangles
-    t1Rect = []
-    t2Rect = []
-    tRect = []
+    offset_src_tri = []
+    offset_dest_tri = []
+    offset_avg_tri = []
 
     for i in range(0, 3):
-        tRect.append(((avg_tri[i][0] - avg_tri_bounding_rect[0]), 
-                      (avg_tri[i][1] - avg_tri_bounding_rect[1])))
-        t1Rect.append(((src_tri[i][0] - src_tri_bounding_rect[0]), 
-                       (src_tri[i][1] - src_tri_bounding_rect[1])))
-        t2Rect.append(((dest_tri[i][0] - dest_tri_bounding_rect[0]), 
-                       (dest_tri[i][1] - dest_tri_bounding_rect[1])))
-
-    # t1Rect, t2Rect, tRect = find_bounding_rectangles(src_tri, dest_tri, avg_tri)
+        offset_avg_tri.append(((avg_tri[i][0] - avg_tri_bounding_rect[0]), 
+                               (avg_tri[i][1] - avg_tri_bounding_rect[1])))
+        offset_src_tri.append(((src_tri[i][0] - src_tri_bounding_rect[0]), 
+                               (src_tri[i][1] - src_tri_bounding_rect[1])))
+        offset_dest_tri.append(((dest_tri[i][0] - dest_tri_bounding_rect[0]), 
+                                (dest_tri[i][1] - dest_tri_bounding_rect[1])))
 
     # Get mask by filling triangle
     mask = np.zeros((avg_tri_bounding_rect[3], avg_tri_bounding_rect[2], 3), dtype = np.float32)
-    cv2.fillConvexPoly(mask, np.int32(tRect), (1.0, 1.0, 1.0), 16, 0);
+    cv2.fillConvexPoly(mask, np.int32(offset_avg_tri), (1.0, 1.0, 1.0), 16, 0);
 
-    # Apply warpImage to small rectangular patches
-    src_img_rect = src_img[src_tri_bounding_rect[1]:src_tri_bounding_rect[1] + src_tri_bounding_rect[3], 
-                           src_tri_bounding_rect[0]:src_tri_bounding_rect[0] + src_tri_bounding_rect[2]]
-
-    dest_img_rect = dest_img[dest_tri_bounding_rect[1]:dest_tri_bounding_rect[1] + dest_tri_bounding_rect[3], 
-                             dest_tri_bounding_rect[0]:dest_tri_bounding_rect[0] + dest_tri_bounding_rect[2]]
+    # Apply warp to small rectangular patches
+    src_img_patch = generate_patches(src_img, src_tri_bounding_rect)
+    dest_img_patch = generate_patches(dest_img, dest_tri_bounding_rect)
 
     size = (avg_tri_bounding_rect[2], avg_tri_bounding_rect[3])
-    src_affine_transform = apply_affine_transform(src_img_rect, t1Rect, tRect, size)
-    dest_affine_transform = apply_affine_transform(dest_img_rect, t2Rect, tRect, size)
+    src_affine_transform = apply_affine_transform(src_img_patch, offset_src_tri, offset_avg_tri, size)
+    dest_affine_transform = apply_affine_transform(dest_img_patch, offset_dest_tri, offset_avg_tri, size)
 
     # Blend patches
     blended_rect = blend(src_affine_transform, dest_affine_transform, alpha)
@@ -92,8 +70,11 @@ def warp_triangle(src_img, dest_img, output_img, src_tri, dest_tri, avg_tri, alp
     x_start = avg_tri_bounding_rect[0]
     x_end = avg_tri_bounding_rect[0] + avg_tri_bounding_rect[2]
     output_img[y_start:y_end, x_start:x_end] = output_img[y_start:y_end, x_start:x_end] * (1 - mask) + blended_rect * mask
-    
+
+
 def weighted_average(src_landmarks, dest_landmarks, alpha):
+    # Generate a set of landmarks that are weighted to be closer in distance
+    # to either the src or dest based on the value of alpha
     midpts = []
     for i in range(0, len(src_landmarks)):
         x = ( 1 - alpha ) * src_landmarks[i][0] + alpha * dest_landmarks[i][0]
@@ -101,13 +82,12 @@ def weighted_average(src_landmarks, dest_landmarks, alpha):
         midpts.append((x,y))
     return midpts
 
-# def generate_midmorphs(src_landmarks, dest_landmarks, midpts, delaunay_list):
-
-
-def create_video(src_img, dest_img, src_landmarks, dest_landmarks, delaunay_list, dest_size, output):
-    # Start the process for creating a video
-    p = Popen(['ffmpeg', '-y', '-f', 'image2pipe', '-r', str(FRAME_RATE),'-s',str(dest_size[1])+'x'+str(dest_size[0]), '-i', '-', '-c:v', 'libx264', '-crf', '25','-vf','scale=trunc(iw/2)*2:trunc(ih/2)*2','-pix_fmt','yuv420p', output], stdin=PIPE)
+def generate_midmorphs(src_img, dest_img, src_landmarks, dest_landmarks, delaunay_list):
+    # Generate a series of morphed faces based on the weighted 
+    # averages of the facial landmark points
     
+    collected_mid_morphs = []
+
     # Specify the number of 'mid-morph' images needed for the video
     total_midpts=int(VIDEO_LENGTH * FRAME_RATE)
     for j in range(0, total_midpts):
@@ -135,8 +115,18 @@ def create_video(src_img, dest_img, src_landmarks, dest_landmarks, delaunay_list
 
             # Morph one triangle at a time.
             warp_triangle(src_img, dest_img, mid_morph, src_tri, dest_tri, avg_tri, alpha)
+        
+        collected_mid_morphs.append(mid_morph)
 
-        temp_res = cv2.cvtColor(np.uint8(mid_morph),cv2.COLOR_BGR2RGB)
+    return collected_mid_morphs
+
+def create_video(mid_morphs, dest_size, output):
+    # Start the process for creating a video
+    p = Popen(['ffmpeg', '-y', '-f', 'image2pipe', '-r', str(FRAME_RATE),'-s',str(dest_size[1])+'x'+str(dest_size[0]), '-i', '-', '-c:v', 'libx264', '-crf', '25','-vf','scale=trunc(iw/2)*2:trunc(ih/2)*2','-pix_fmt','yuv420p', output], stdin=PIPE)
+    
+    for mid_morph_img in mid_morphs:
+
+        temp_res = cv2.cvtColor(np.uint8(mid_morph_img),cv2.COLOR_BGR2RGB)
         res = Image.fromarray(temp_res)
         res.save(p.stdin, 'JPEG')
 
