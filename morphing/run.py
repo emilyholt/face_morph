@@ -1,5 +1,5 @@
 from detect_landmarks import crop_images, find_landmarks_set, average_landmarks
-from triangulate import delaunay_triangulation
+from triangulate import delaunay_triangulation, draw_delaunay_triangles
 from warp import generate_midmorphs, create_video
 import subprocess
 import argparse
@@ -21,6 +21,7 @@ def morph(predictor, src_img, dest_img, output):
 		print("error: couldn't find a face in the image " + dest_size[1])
 		return
 	delaunay_list = delaunay_triangulation(dest_size[1], dest_size[0], avg_landmarks)
+	draw_delaunay_triangles(dest_size[1], dest_size[0], avg_landmarks)
 	mid_morphs = generate_midmorphs(cropped_src, cropped_dest, src_landmarks, dest_landmarks, delaunay_list)
 	create_video(mid_morphs, dest_size, output)
 

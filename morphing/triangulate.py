@@ -15,6 +15,85 @@ def point_in_rect(rect, point) :
         return False
     return True
 
+
+# Draw a point
+def draw_point(img, p, color ) :
+    cv2.circle( img, p, 2, color, -1, cv2.LINE_AA, 0 )
+
+
+# Draw delaunay triangles
+def draw_delaunay_lines(img, subdiv, delaunay_color ) :
+
+    triangleList = subdiv.getTriangleList();
+    size = img.shape
+    r = (0, 0, size[1], size[0])
+
+    for t in triangleList :
+        
+        pt1 = (t[0], t[1])
+        pt2 = (t[2], t[3])
+        pt3 = (t[4], t[5])
+        
+        if point_in_rect(r, pt1) and point_in_rect(r, pt2) and point_in_rect(r, pt3) :
+        
+            cv2.line(img, pt1, pt2, delaunay_color, 1, cv2.LINE_AA, 0)
+            cv2.line(img, pt2, pt3, delaunay_color, 1, cv2.LINE_AA, 0)
+            cv2.line(img, pt3, pt1, delaunay_color, 1, cv2.LINE_AA, 0)
+
+
+
+def draw_delaunay_triangles(img_height, img_width, avg_landmarks):
+
+    # Define window names
+    win_delaunay = "Delaunay Triangulation"
+
+    # Turn on animation while drawing triangles
+    animate = True
+    
+    # Define colors for drawing.
+    delaunay_color = (255,255,255)
+    points_color = (0, 0, 255)
+
+    # Read in the image.
+    img = cv2.imread("demos/esther.jpeg");
+    
+    # Keep a copy around
+    img_orig = img.copy();
+    
+    # Rectangle to be used with Subdiv2D
+    # size = img.shape
+    rect = (0, 0, img_height, img_width)
+    
+    # Create an instance of Subdiv2D
+    subdiv = cv2.Subdiv2D(rect);
+
+    # Insert points into subdiv
+    for p in avg_landmarks :
+        p = (int(p[0]), int(p[1]))
+        subdiv.insert(p)
+        
+        # Show animation
+        if animate :
+            img_copy = img_orig.copy()
+            # Draw delaunay triangles
+            draw_delaunay_lines( img_copy, subdiv, (255, 255, 255) );
+            cv2.imshow(win_delaunay, img_copy)
+            cv2.waitKey(100)
+
+    # Draw delaunay triangles
+    draw_delaunay_lines( img, subdiv, (255, 255, 255) );
+
+    # Draw points
+    for p in avg_landmarks :
+        p = (int(p[0]), int(p[1]))
+        draw_point(img, p, (0,0,255))
+
+    # Show results
+    cv2.imshow(win_delaunay,img)
+    cv2.waitKey(0)
+
+#######################################################################
+
 def delaunay_triangulation(img_height, img_width, avg_landmarks):
     
     '''
