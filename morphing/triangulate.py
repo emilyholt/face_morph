@@ -42,7 +42,7 @@ def draw_delaunay_lines(img, subdiv, delaunay_color ) :
 
 
 
-def draw_delaunay_triangles(img_height, img_width, avg_landmarks):
+def draw_delaunay_triangles(img, img_height, img_width, landmarks):
 
     # Define window names
     win_delaunay = "Delaunay Triangulation"
@@ -55,7 +55,7 @@ def draw_delaunay_triangles(img_height, img_width, avg_landmarks):
     points_color = (0, 0, 255)
 
     # Read in the image.
-    img = cv2.imread("demos/esther.jpeg");
+    # img = cv2.imread("demos/esther.jpeg");
     
     # Keep a copy around
     img_orig = img.copy();
@@ -68,7 +68,7 @@ def draw_delaunay_triangles(img_height, img_width, avg_landmarks):
     subdiv = cv2.Subdiv2D(rect);
 
     # Insert points into subdiv
-    for p in avg_landmarks :
+    for p in landmarks :
         p = (int(p[0]), int(p[1]))
         subdiv.insert(p)
         
@@ -84,7 +84,7 @@ def draw_delaunay_triangles(img_height, img_width, avg_landmarks):
     draw_delaunay_lines( img, subdiv, (255, 255, 255) );
 
     # Draw points
-    for p in avg_landmarks :
+    for p in landmarks :
         p = (int(p[0]), int(p[1]))
         draw_point(img, p, (0,0,255))
 

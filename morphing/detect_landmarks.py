@@ -139,4 +139,4 @@ def find_landmarks_set(predictor_path, cropped_src, cropped_dest):
     src_landmarks= find_landmarks(predictor_path, cropped_src, src_size)
     dest_landmarks= find_landmarks(predictor_path, cropped_dest, dest_size)
     
-    return [dest_size, src_landmarks, dest_landmarks]
+    return [src_size, dest_size, src_landmarks, dest_landmarks]
