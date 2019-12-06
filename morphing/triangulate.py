@@ -40,8 +40,6 @@ def draw_delaunay_lines(img, subdiv, delaunay_color ) :
             cv2.line(img, pt2, pt3, delaunay_color, 1, cv2.LINE_AA, 0)
             cv2.line(img, pt3, pt1, delaunay_color, 1, cv2.LINE_AA, 0)
 
-
-
 def draw_delaunay_triangles(img, img_height, img_width, landmarks):
 
     # Define window names
@@ -53,15 +51,11 @@ def draw_delaunay_triangles(img, img_height, img_width, landmarks):
     # Define colors for drawing.
     delaunay_color = (255,255,255)
     points_color = (0, 0, 255)
-
-    # Read in the image.
-    # img = cv2.imread("demos/esther.jpeg");
     
     # Keep a copy around
     img_orig = img.copy();
     
     # Rectangle to be used with Subdiv2D
-    # size = img.shape
     rect = (0, 0, img_height, img_width)
     
     # Create an instance of Subdiv2D
@@ -76,12 +70,12 @@ def draw_delaunay_triangles(img, img_height, img_width, landmarks):
         if animate :
             img_copy = img_orig.copy()
             # Draw delaunay triangles
-            draw_delaunay_lines( img_copy, subdiv, (255, 255, 255) );
+            draw_delaunay_lines(img_copy, subdiv, (255, 255, 255));
             cv2.imshow(win_delaunay, img_copy)
             cv2.waitKey(100)
 
     # Draw delaunay triangles
-    draw_delaunay_lines( img, subdiv, (255, 255, 255) );
+    draw_delaunay_lines(img, subdiv, (255, 255, 255));
 
     # Draw points
     for p in landmarks :
@@ -90,9 +84,6 @@ def draw_delaunay_triangles(img, img_height, img_width, landmarks):
 
     # Show results
     cv2.imshow(win_delaunay,img)
-    cv2.waitKey(0)
-
-#######################################################################
 
 def delaunay_triangulation(img_height, img_width, avg_landmarks):
     

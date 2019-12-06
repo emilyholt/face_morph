@@ -1,3 +1,12 @@
+'''
+Implementation of warping delaunay-triangulated faces into a video
+
+Reference implementations: 
+- https://github.com/cirbuk/face-morphing
+- https://github.com/alyssaq/face_morpher
+
+'''
+
 import numpy as np
 import cv2
 import sys
@@ -71,7 +80,6 @@ def warp_triangle(src_img, dest_img, output_img, src_tri, dest_tri, avg_tri, alp
     x_end = avg_tri_bounding_rect[0] + avg_tri_bounding_rect[2]
     output_img[y_start:y_end, x_start:x_end] = output_img[y_start:y_end, x_start:x_end] * (1 - mask) + blended_rect * mask
 
-
 def weighted_average(src_landmarks, dest_landmarks, alpha):
     # Generate a set of landmarks that are weighted to be closer in distance
     # to either the src or dest based on the value of alpha
@@ -85,7 +93,6 @@ def weighted_average(src_landmarks, dest_landmarks, alpha):
 def generate_midmorphs(src_img, dest_img, src_landmarks, dest_landmarks, delaunay_list):
     # Generate a series of morphed faces based on the weighted 
     # averages of the facial landmark points
-    
     collected_mid_morphs = []
 
     # Specify the number of 'mid-morph' images needed for the video

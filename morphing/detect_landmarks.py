@@ -1,3 +1,13 @@
+'''
+Implementation of detecting faces, locating facial landmarks, and cropping & aligning faces
+
+Reference implementations: 
+- https://github.com/davisking/dlib/tree/master/python_examples
+- https://github.com/cirbuk/face-morphing
+- https://github.com/alyssaq/face_morpher
+
+'''
+
 import sys
 import os
 import dlib
