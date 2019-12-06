@@ -12,6 +12,8 @@
 4. Morph 
 	- Collect weighted-averaged-morphs to form a video of morphing one inputted image to the other
 
+Please refer to attached PPT for a more detailed description of the face morphing process
+
 ## Usage
 
 ### Requirements
@@ -24,10 +26,18 @@
 * `Pillow`: image processing library
 
 
-### Setup
-* `virtualenv virt`
-* `source virt/bin/activate`
-* `pip install -r requirements.txt`
+### Installation
+* Verify you have Python3 installed (with pip)
+* Verify you have the Python module `virtualenv` installed
+* Run:
+```
+virtualenv virt
+source virt/bin/activate
+pip install -r requirements.txt
+```
 
 ### Running 
-Example: `python morphing/run.py -s demos/esther.jpeg -d demos/benji.jpeg`
+After installation, run the code with `python morphing/run.py -s <SOURCE_IMAGE> -d <DESTINATION_IMAGE> -o <OUTPUT_FILENAME`
+Example: `python morphing/run.py -s demos/esther.jpeg -d demos/benji.jpeg -o morphing_video.mp4`
+Note: program works best if the two images are already the same size
+
